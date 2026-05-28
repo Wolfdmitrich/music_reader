@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AudioVault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="noise-overlay"></div>
+<canvas id="bgCanvas"></canvas>
+
+<div class="app-shell">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-mark">AV</div>
+            <div class="logo-text">
+                <span class="logo-name">AudioVault</span>
+                <span class="logo-sub" data-i18n="version">v2.0</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-view="all">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                <span data-i18n="nav_all">Все треки</span>
+                <span class="nav-count" id="navTotal">0</span>
+            </button>
+            <button class="nav-item" data-view="favorites">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span data-i18n="nav_favorites">Избранное</span>
+                <span class="nav-count" id="navFavs">0</span>
+            </button>
+            <button class="nav-item" data-view="categories">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span data-i18n="nav_categories">Категории</span>
+                <span class="nav-count" id="navCats">0</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-categories" id="categoryList"></div>
+
+        <div class="sidebar-footer">
+            <label class="upload-trigger" for="jsonInput">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span data-i18n="upload_json">Загрузить JSON</span>
+            </label>
+            <input type="file" id="jsonInput" accept=".json" style="display:none">
+            <button class="sample-btn" id="loadSampleBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span data-i18n="sample">Пример</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+
+            <div class="search-bar">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="10" cy="10" r="7"/><path d="m21 21-6-6"/></svg>
+                <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder" placeholder="Поиск по названию, ID, категории…" autocomplete="off">
+                <button class="search-clear" id="searchClear" title="Очистить">×</button>
+            </div>
+
+            <div class="topbar-right">
+                <div class="view-toggle">
+                    <button class="view-btn active" id="viewGrid">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    </button>
+                    <button class="view-btn" id="viewList">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    </button>
+                </div>
+
+                <select id="sortSelect" class="sort-select">
+                    <option value="default" data-i18n="sort_default">По умолчанию</option>
+                    <option value="title_asc" data-i18n="sort_title_asc">Название А→Я</option>
+                    <option value="title_desc" data-i18n="sort_title_desc">Название Я→А</option>
+                    <option value="duration_asc" data-i18n="sort_duration_asc">Длительность ↑</option>
+                    <option value="duration_desc" data-i18n="sort_duration_desc">Длительность ↓</option>
+                    <option value="category_asc" data-i18n="sort_category_asc">Категория А→Я</option>
+                </select>
+
+                <button class="icon-btn danger-btn" id="clearFavBtn">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                </button>
+
+                <!-- Theme Toggle -->
+                <button class="icon-btn" id="themeToggle" title="Сменить тему">
+                    <svg id="themeIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                </button>
+
+                <!-- Language Toggle -->
+                <button class="icon-btn" id="langToggle" title="RU/EN">RU</button>
+            </div>
+        </header>
+
+        <!-- STATS BAR -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-chip">
+                <span class="stat-val" id="totalCount">0</span>
+                <span class="stat-label" data-i18n="stat_tracks">треков</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-chip">
+                <span class="stat-val" id="favCount">0</span>
+                <span class="stat-label" data-i18n="stat_favorites">избранных</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-chip">
+                <span class="stat-val" id="catCount">0</span>
+                <span class="stat-label" data-i18n="stat_categories">категорий</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-chip">
+                <span class="stat-val" id="shownCount">0</span>
+                <span class="stat-label" data-i18n="stat_shown">показано</span>
+            </div>
+            <div class="stat-spacer"></div>
+            <button class="export-btn" id="exportBtn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span data-i18n="export_fav">Экспорт избранных</span>
+            </button>
+        </div>
+
+        <!-- ACTIVE CATEGORY FILTER -->
+        <div class="active-filter" id="activeFilter" style="display:none">
+            <span class="active-filter-label" data-i18n="filter_label">Фильтр:</span>
+            <span class="active-filter-val" id="activeFilterVal"></span>
+            <button class="filter-clear-btn" id="filterClear">× <span data-i18n="filter_clear">убрать</span></button>
+        </div>
+
+        <!-- CONTENT AREA -->
+        <div class="content-area" id="contentArea">
+
+            <!-- EMPTY STATE -->
+            <div class="empty-state" id="emptyState">
+                <div class="empty-glyph">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                </div>
+                <h2 data-i18n="empty_title">Добро пожаловать в AudioVault</h2>
+                <p data-i18n="empty_desc">Загрузите JSON-файл с треками или воспользуйтесь примером данных</p>
+                <code>[{"category": "…", "id": "…", "title": "…", "duration": 123}]</code>
+                <div class="empty-actions">
+                    <label class="btn-primary" for="jsonInput">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <span data-i18n="upload_json">Загрузить JSON</span>
+                    </label>
+                    <button class="btn-secondary" id="emptySampleBtn"><span data-i18n="sample">Загрузить пример</span></button>
+                </div>
+            </div>
+
+            <!-- NO RESULTS -->
+            <div class="no-results" id="noResults" style="display:none">
+                <div class="empty-glyph">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                </div>
+                <h3 data-i18n="no_results_title">Ничего не найдено</h3>
+                <p data-i18n="no_results_desc">Попробуйте изменить запрос или фильтр категории</p>
+            </div>
+
+            <!-- GRID -->
+            <div class="tracks-grid" id="tracksGrid" style="display:none"></div>
+
+        </div>
+    </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" id="trackModal">
+        <button class="modal-close" id="modalClose">×</button>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-stack" id="toastStack"></div>
+
+<!-- DROP OVERLAY -->
+<div class="drop-overlay" id="dropOverlay">
+    <div class="drop-inner">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span data-i18n="drop_text">Отпустите для загрузки JSON</span>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
