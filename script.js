@@ -2289,6 +2289,12 @@ function startPreview(track, attempt) {
   previewAttemptToken++;
   const myToken = previewAttemptToken;
   const audio = getPreviewAudio();
+
+  // ✅ Сброс состояния перед загрузкой нового трека
+  audio.pause();
+  audio.removeAttribute('src');
+  audio.load();
+
   setButtonLoading(id);
   setPlayerStatus(
     attempt > 0
@@ -2296,10 +2302,6 @@ function startPreview(track, attempt) {
       : t("preview_loading"),
   );
 
-  // Пробуем CORS (нужно для реальной визуализации волны через AnalyserNode)
-  // только пока не выяснили, что прокси его не поддерживает. Если это
-  // первая проба и она провалится — не тратим один из "настоящих" retry,
-  // сразу тихо откатываемся без CORS, чтобы воспроизведение точно работало.
   const tryingCors = attempt === 0 && waveformCorsSupported !== false;
   audio.crossOrigin = tryingCors ? "anonymous" : null;
 
@@ -2307,6 +2309,7 @@ function startPreview(track, attempt) {
     audio.removeEventListener("canplay", onCanPlay);
     audio.removeEventListener("error", onError);
   };
+
   const onCanPlay = () => {
     if (myToken !== previewAttemptToken) return cleanup();
     cleanup();
@@ -2316,12 +2319,13 @@ function startPreview(track, attempt) {
       .then(() => setPlayerStatus(""))
       .catch(onError);
   };
+
   const onError = () => {
     if (myToken !== previewAttemptToken) return cleanup();
     cleanup();
     if (tryingCors) {
       waveformCorsSupported = false;
-      startPreview(track, attempt); // тот же attempt, но уже без CORS
+      startPreview(track, attempt); // повтор без CORS
       return;
     }
     if (attempt + 1 < PREVIEW_MAX_ATTEMPTS) {
@@ -2332,6 +2336,7 @@ function startPreview(track, attempt) {
       markUnavailable(id);
     }
   };
+
   audio.addEventListener("canplay", onCanPlay, { once: true });
   audio.addEventListener("error", onError, { once: true });
   audio.src = previewUrl(id);
