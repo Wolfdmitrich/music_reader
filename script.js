@@ -1864,6 +1864,14 @@ function render() {
   DOM.shownCount.textContent = displayed.length;
 
   if (sigChanged) {
+    // innerHTML отбрасывает все текущие дочерние узлы, но sentinelObserver /
+    // cardRevealObserver — постоянные синглтоны, которые эти узлы всё ещё
+    // наблюдают. Без явного disconnect() каждая перерисовка (поиск, фильтр,
+    // сортировка) оставляла в наблюдении observer'а отсоединённый от DOM
+    // sentinel и недопоказанные карточки — они никогда не GC'ились и с
+    // каждым вводом в поиск копились новые "мёртвые" цели.
+    sentinelObserver?.disconnect();
+    cardRevealObserver?.disconnect();
     const slice = displayed.slice(0, state.renderedCount);
     DOM.tracksGrid.innerHTML = slice.map(buildCardHTML).join("");
   }
