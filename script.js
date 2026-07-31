@@ -1236,6 +1236,13 @@ function toggleFav(id) {
     const f = state.favorites.has(id);
     star.textContent = f ? "★" : "☆";
     star.classList.toggle("active", f);
+    if (f) {
+      star.classList.remove("pop");
+      // force reflow so the animation can retrigger on repeated favoriting
+      void star.offsetWidth;
+      star.classList.add("pop");
+      star.addEventListener("animationend", () => star.classList.remove("pop"), { once: true });
+    }
     if (card) card.classList.toggle("is-fav", f);
   }
   if (state.view === "favorites") render();
@@ -2245,7 +2252,7 @@ function startWaveform() {
       // лёгкое сглаживание, чтобы бары не дёргались хаотично каждый кадр
       const smoothed = prevScale[b] + (target - prevScale[b]) * 0.5;
       prevScale[b] = smoothed;
-      if (bars[b]) bars[b].style.transform = `scaleY(${smoothed.toFixed(2)})`;
+      if (bars[b]) bars[b].style.setProperty("--amp", smoothed.toFixed(2));
     }
     // Если звук стабильно "тихий" (не удалось прочитать реальные данные —
     // например, из-за отсутствия CORS у прокси), откатываемся на декор.
@@ -2253,7 +2260,7 @@ function startWaveform() {
       waveSilentFrames++;
       if (waveSilentFrames > 90) {
         DOM.mpEq?.classList.remove("real");
-        bars.forEach((b) => (b.style.transform = ""));
+        bars.forEach((b) => b.style.removeProperty("--amp"));
         cancelAnimationFrame(waveRAF);
         return;
       }
@@ -2267,7 +2274,7 @@ function startWaveform() {
 function stopWaveform() {
   cancelAnimationFrame(waveRAF);
   waveRAF = null;
-  DOM.mpEq?.querySelectorAll("span").forEach((b) => (b.style.transform = ""));
+  DOM.mpEq?.querySelectorAll("span").forEach((b) => b.style.removeProperty("--amp"));
 }
 
 function togglePreview(id) {
